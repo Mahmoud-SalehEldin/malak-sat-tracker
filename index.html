@@ -522,7 +522,10 @@ $("f").addEventListener("submit",e=>{
   }
   try{rows=JSON.parse(localStorage.getItem(CACHE)||"[]")}catch(e){rows=[]}
   render();load();
-  setInterval(()=>{if(!document.hidden)load()},20000);
+  let day=today();
+  const rollover=()=>{const d=today();if(d!==day){if($("date").value===day)$("date").value=d;day=d;render()}};
+  setInterval(()=>{rollover();if(!document.hidden)load()},20000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)rollover()});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
 })();
 </script>
