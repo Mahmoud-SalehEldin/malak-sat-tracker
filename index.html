@@ -187,7 +187,7 @@ const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec
 // Egypt weekend = Friday + Saturday
 // Push days (5 exams): Friday, Saturday, Sunday
 const kind=s=>s===EVE?"eve":([0,5,6].includes(pd(s).getDay())?"weekend":"weekday");
-const WEIGHT={weekday:1,weekend:2,eve:0}, MIN={weekday:3,weekend:5,eve:0};
+const WEIGHT={weekday:1,weekend:2,eve:0}, MIN={weekday:3,weekend:5,eve:0}, MAX={weekday:5,weekend:7,eve:0};
 $("date").value=today();
 
 /* ---------- stats ---------- */
@@ -202,7 +202,7 @@ function stats(k){
   const eff=Math.min(15,Math.max(8,m)); // conservative: 8–15 pts gained per exam
   const need=Math.min(60,Math.ceil(Math.max(0,800-avg)/eff));
   const hard=s.filter(r=>r.diff==="hard").map(r=>r.score);
-  return {s,sc,ma,n:sc.length,avg,eff,need,best:Math.max(...sc),bestHard:hard.length?Math.max(...hard):null};
+  return {s,sc,ma,n:sc.length,avg,eff,need,trend:Math.min(15,Math.max(0,m)),best:Math.max(...sc),bestHard:hard.length?Math.max(...hard):null};
 }
 
 /* ---------- plan ---------- */
@@ -216,13 +216,21 @@ function schedule(){
   const share=(nE+nM)?nE/(nE+nM):.5;
   const plan=days.map(d=>{
     const k=kind(d);
-    let T=k==="eve"?0:Math.max(MIN[k],Math.round(R*WEIGHT[k]/Wsum));
+    let T=k==="eve"?0:Math.min(MAX[k],Math.max(MIN[k],Math.round(R*WEIGHT[k]/Wsum)));
     let e=Math.round(T*share),m=T-e;
     if(T>=2){if(nE>0&&e<1){e=1;m=T-1}if(nM>0&&m<1){m=1;e=T-1}}
     const dn=rows.filter(r=>r.date===d);
     const dE=dn.filter(r=>r.subject==="English").length, dM=dn.filter(r=>r.subject==="Math").length;
     return {d,k,T,e,m,dE,dM,met:T>0&&dE>=e&&dM>=m};
   });
+  const t0=plan[0]&&plan[0].d===t?plan[0]:null;
+  for(const k of SUBJ){
+    const s=st[k];if(!s.n)continue;
+    const left=plan.reduce((a,p)=>a+(k==="English"?p.e:p.m),0)-(t0?(k==="English"?t0.dE:t0.dM):0);
+    s.left=Math.max(0,left);
+    s.proj=Math.min(800,Math.round((s.avg+s.trend*s.left)/10)*10);
+    s.short=s.need>s.left;
+  }
   return {st,plan,needTotal:nE+nM,planned:plan.reduce((a,p)=>a+p.T,0)};
 }
 function streak(){
@@ -286,6 +294,7 @@ function drawHero(){
      :`School day, but ${p.T} exams fits: one after homework, one before bed.`;
   else msg=`${togo} to go. You've started, now finish strong! 💪`;
   h.append(mk("p",{class:"msg"},msg));
+  if(SUBJ.some(k=>st[k].short))h.append(mk("p",{class:"quote",style:"opacity:.9"},"⚡ Max-effort mode: the plan is at full speed. Every extra exam you solve raises your 5 Dec score."));
   h.append(mk("p",{class:"quote"},"💡 "+pick(LINES,t)));
 }
 
@@ -330,7 +339,10 @@ function drawSubjects(){
     fact("Exams done",String(s.n));
     fact("Planned before 5 Dec",String(planned));
     c.append(f);
-    c.append(mk("p",{class:"mut",style:"font-size:12.5px;margin:10px 0 0"},`Path to 800: about ${s.need} more exams at +${Math.round(s.eff)} per exam, if every mistake gets reviewed.`));
+    if(s.short){
+      c.append(mk("p",{style:"font-size:14px;margin:10px 0 0;font-weight:600"},`🎯 On track for about ${s.proj} on 5 Dec`));
+      c.append(mk("p",{class:"mut",style:"font-size:12.5px;margin:4px 0 0"},s.trend<3?`Her scores aren't rising yet, so this is where she'd land. Reviewing every mistake is what gets this line moving up.`:`Based on her recent trend (+${Math.round(s.trend)} per exam). Every extra exam and every reviewed mistake pushes this number up.`));
+    }else c.append(mk("p",{class:"mut",style:"font-size:12.5px;margin:10px 0 0"},`Path to 800: about ${s.need} more exams at +${Math.round(s.eff)} per exam, if every mistake gets reviewed.`));
     box.append(c);
   }
 }
@@ -345,7 +357,7 @@ function drawChart(){
     if(!s.n){wrap.append(mk("p",{class:"mut"},"No exams yet."));box.append(wrap);continue}
     const W=460,H=230,L=36,R=12,T=26,B=28;
     const lo=Math.max(0,Math.floor((Math.min(...s.sc)-30)/50)*50),hi=800;
-    const N=Math.max(2,s.n+s.need);
+    const N=Math.max(2,s.n+(s.short?Math.max(1,s.left||0):s.need));
     const X=i=>L+(i/(N-1))*(W-L-R),Y=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);
     const svg=mk("svg",{svg:1,viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":k+" scores and path to 800"});
     for(let v=lo;v<=hi;v+=50){
@@ -365,7 +377,12 @@ function drawChart(){
     const last=s.n-1;
     svg.append(mk("circle",{svg:1,cx:X(last),cy:Y(s.avg),r:5,fill:c,stroke:"#fff","stroke-width":2}));
     svg.append(mk("text",{svg:1,x:X(last),y:Y(s.avg)-10,"text-anchor":"middle","font-size":12,"font-weight":700,fill:"#16202e"},"Now "+Math.round(s.avg)));
-    if(s.need>0){
+    if(s.need>0&&s.short){
+      const x2=last+Math.max(1,s.left);
+      svg.append(mk("line",{svg:1,x1:X(last),y1:Y(s.avg),x2:X(x2),y2:Y(s.proj),stroke:c,"stroke-width":2,"stroke-dasharray":"6 6"}));
+      svg.append(mk("circle",{svg:1,cx:X(x2),cy:Y(s.proj),r:5,fill:"#fff",stroke:c,"stroke-width":2.5}));
+      svg.append(mk("text",{svg:1,x:X(x2),y:Y(s.proj)-10,"text-anchor":"end","font-size":12,"font-weight":700,fill:"#16202e"},`5 Dec: ~${s.proj}`));
+    }else if(s.need>0){
       const x2=last+s.need;
       svg.append(mk("line",{svg:1,x1:X(last),y1:Y(s.avg),x2:X(x2),y2:Y(800),stroke:c,"stroke-width":2,"stroke-dasharray":"6 6"}));
       svg.append(mk("text",{svg:1,x:X(x2),y:Y(800)-8,"text-anchor":"end","font-size":12,"font-weight":700,fill:"#1f9d55"},`🏆 800 at exam #${x2+1}`));
