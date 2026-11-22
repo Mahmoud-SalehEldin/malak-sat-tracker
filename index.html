@@ -84,6 +84,8 @@ button.del{border:none;background:none;color:var(--mut);cursor:pointer;font-size
 
 /* chart & table */
 svg{width:100%;height:auto;display:block}
+.chartbox{margin-bottom:14px}.chartbox:last-child{margin-bottom:0}
+#chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mut);margin-top:6px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
@@ -135,13 +137,7 @@ td select{padding:4px 6px}
 <div class="card">
 <h2>Score journey</h2>
 <div id="chart"></div>
-<div class="legend">
-<span><i class="dot" style="background:var(--eng)"></i> English</span>
-<span><i class="dot" style="background:var(--mat)"></i> Math</span>
-<span>Filled dot = hard · faded = medium · hollow = easy</span>
-<span>Thick line = average of last 3 exams</span>
-<span>Dashed = path to 800</span>
-</div>
+<div class="legend"><span>Solid line = her level (average of last 3 exams) · faint dots = single exams · dashed = path to 800</span></div>
 </div>
 
 <div class="card">
@@ -341,41 +337,41 @@ function drawSubjects(){
 
 /* ---------- chart ---------- */
 function drawChart(){
-  const {st}=schedule();
-  const W=760,H=380,L=46,R=16,T=48,B=38;
-  const all=rows.map(r=>r.score);
-  const lo=Math.max(0,Math.floor((Math.min(450,...all)-20)/50)*50),hi=800;
-  const N=Math.max(2,...SUBJ.map(k=>st[k].n+st[k].need));
-  const X=i=>L+(i/(N-1))*(W-L-R),Y=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);
-  const svg=mk("svg",{svg:1,viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Score journey and path to 800"});
-  for(let v=lo;v<=hi;v+=50){
-    svg.append(mk("line",{svg:1,x1:L,x2:W-R,y1:Y(v),y2:Y(v),stroke:v===hi?"#1f9d55":"#e4e7ec","stroke-width":v===hi?2:1}));
-    svg.append(mk("text",{svg:1,x:L-8,y:Y(v)+4,"text-anchor":"end","font-size":11,fill:"#667085"},v));
-  }
-  svg.append(mk("text",{svg:1,x:L+4,y:Y(hi)-5,"font-size":11.5,"font-weight":700,fill:"#1f9d55"},"🏆 800"));
-  const step=N>40?10:N>20?5:N>12?2:1;
-  for(let i=0;i<N;i+=step)svg.append(mk("text",{svg:1,x:X(i),y:H-18,"text-anchor":"middle","font-size":11,fill:"#667085"},i+1));
-  svg.append(mk("text",{svg:1,x:(L+W-R)/2,y:H-2,"text-anchor":"middle","font-size":11,fill:"#667085"},"Exam number"));
-  SUBJ.forEach((k,ki)=>{
-    const s=st[k];if(!s.n)return;const c=COL[k];
-    if(s.n>1){
-      svg.append(mk("polyline",{svg:1,points:s.sc.map((v,i)=>X(i)+","+Y(v)).join(" "),fill:"none",stroke:c,"stroke-width":1.5,"stroke-opacity":.4}));
-      svg.append(mk("polyline",{svg:1,points:s.ma.map((v,i)=>X(i)+","+Y(v)).join(" "),fill:"none",stroke:c,"stroke-width":3.5,"stroke-linecap":"round","stroke-linejoin":"round"}));
+  const {st}=schedule(), box=$("chart");box.replaceChildren();
+  for(const k of SUBJ){
+    const s=st[k], c=COL[k];
+    const wrap=mk("div",{class:"chartbox"});
+    const h=mk("div",{class:"sh",style:"margin-bottom:4px"});h.append(mk("i",{class:"dot",style:"background:"+c}),k);wrap.append(h);
+    if(!s.n){wrap.append(mk("p",{class:"mut"},"No exams yet."));box.append(wrap);continue}
+    const W=460,H=230,L=36,R=12,T=26,B=28;
+    const lo=Math.max(0,Math.floor((Math.min(...s.sc)-30)/50)*50),hi=800;
+    const N=Math.max(2,s.n+s.need);
+    const X=i=>L+(i/(N-1))*(W-L-R),Y=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);
+    const svg=mk("svg",{svg:1,viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":k+" scores and path to 800"});
+    for(let v=lo;v<=hi;v+=50){
+      svg.append(mk("line",{svg:1,x1:L,x2:W-R,y1:Y(v),y2:Y(v),stroke:v===hi?"#1f9d55":"#eef0f3","stroke-width":v===hi?2:1}));
+      if(v%100===0||v===hi)svg.append(mk("text",{svg:1,x:L-7,y:Y(v)+4,"text-anchor":"end","font-size":11,fill:"#98a2b3"},v));
     }
-    if(s.need>0){
-      const n=s.n-1,x2=n+s.need;
-      svg.append(mk("line",{svg:1,x1:X(n),y1:Y(s.avg),x2:X(x2),y2:Y(800),stroke:c,"stroke-width":2.5,"stroke-dasharray":"7 6"}));
-      svg.append(mk("circle",{svg:1,cx:X(x2),cy:Y(800),r:7,fill:"#fff",stroke:c,"stroke-width":3}));
-      svg.append(mk("text",{svg:1,x:X(x2),y:Y(800)-(ki?28:12),"text-anchor":x2>N*0.75?"end":"middle","font-size":11.5,"font-weight":700,fill:c},`${k}: 800 by exam #${x2+1}`));
+    const step=N>40?10:N>20?5:N>10?2:1;
+    for(let i=0;i<N;i+=step)svg.append(mk("text",{svg:1,x:X(i),y:H-10,"text-anchor":"middle","font-size":10.5,fill:"#98a2b3"},i+1));
+    if(s.n>1){
+      svg.append(mk("polyline",{svg:1,points:s.sc.map((v,i)=>X(i)+","+Y(v)).join(" "),fill:"none",stroke:c,"stroke-width":1.2,"stroke-opacity":.3}));
+      svg.append(mk("polyline",{svg:1,points:s.ma.map((v,i)=>X(i)+","+Y(v)).join(" "),fill:"none",stroke:c,"stroke-width":3,"stroke-linecap":"round","stroke-linejoin":"round"}));
     }
     s.s.forEach((r,i)=>{
-      const d=r.diff;
-      const dot=mk("circle",{svg:1,cx:X(i),cy:Y(r.score),r:6,stroke:c,"stroke-width":2,fill:d==="easy"?"#fff":c,"fill-opacity":d==="medium"?.45:1});
-      dot.append(mk("title",{svg:1},`${k} · ${r.date} · ${r.score}/800 · ${d}`));
-      svg.append(dot);
+      const dot=mk("circle",{svg:1,cx:X(i),cy:Y(r.score),r:3.2,fill:c,"fill-opacity":.55});
+      dot.append(mk("title",{svg:1},`${r.date} · ${r.score}/800 · ${r.diff}`));svg.append(dot);
     });
-  });
-  $("chart").replaceChildren(svg);
+    const last=s.n-1;
+    svg.append(mk("circle",{svg:1,cx:X(last),cy:Y(s.avg),r:5,fill:c,stroke:"#fff","stroke-width":2}));
+    svg.append(mk("text",{svg:1,x:X(last),y:Y(s.avg)-10,"text-anchor":"middle","font-size":12,"font-weight":700,fill:"#16202e"},"Now "+Math.round(s.avg)));
+    if(s.need>0){
+      const x2=last+s.need;
+      svg.append(mk("line",{svg:1,x1:X(last),y1:Y(s.avg),x2:X(x2),y2:Y(800),stroke:c,"stroke-width":2,"stroke-dasharray":"6 6"}));
+      svg.append(mk("text",{svg:1,x:X(x2),y:Y(800)-8,"text-anchor":"end","font-size":12,"font-weight":700,fill:"#1f9d55"},`🏆 800 at exam #${x2+1}`));
+    }
+    wrap.append(svg);box.append(wrap);
+  }
 }
 
 /* ---------- badges ---------- */
