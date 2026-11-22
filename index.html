@@ -478,9 +478,11 @@ async function load(){
     const out=[];let tok="";
     do{const j=await (await req(BASE+"?pageSize=300"+(tok?"&pageToken="+encodeURIComponent(tok):""))).json();
       (j.documents||[]).forEach(d=>{const r=fromDoc(d);if(r.subject&&!isNaN(r.score))out.push(r)});tok=j.nextPageToken||""}while(tok);
+    const sig=r=>JSON.stringify(sortRows(r).map(x=>[x.id,x.date,x.subject,x.score,x.diff]));
+    const changed=sig(out)!==sig(rows);
     rows=out;fails=0;status("");
     try{localStorage.setItem(CACHE,JSON.stringify(rows))}catch(e){}
-    render();
+    if(changed&&!document.querySelector('button.del[data-s="1"]'))render();
   }catch(e){if(++fails>=2)status("Can't reach the database right now. Check the internet; it will retry by itself.",true)}
   finally{loading=false}
 }
