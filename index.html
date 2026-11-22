@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#16202e">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+<title>Malak's SAT Score Log</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#16202e;--mut:#667085;--line:#e4e7ec;--eng:#2a6fdb;--mat:#e07b00;--ok:#1f9d55;--gold:#f5b301}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:880px;margin:0 auto;padding:16px 12px 70px}
+h2{font-size:16px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.mut{color:var(--mut)}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#16202e 0%,#24365a 60%,#3b2d6b 100%);color:#fff;border-radius:18px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.hero .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.hero h1{margin:0;font-size:20px}
+.hero .daytag{display:inline-block;margin-top:4px;font-size:12.5px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.14)}
+.count{text-align:right}
+.count .n{font-size:40px;font-weight:800;line-height:1}
+.count .l{font-size:12px;opacity:.75}
+.streak{font-size:13px;margin-top:4px;opacity:.95}
+.subs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.sub{background:rgba(255,255,255,.09);border-radius:12px;padding:10px 12px}
+.sub .name{font-size:12.5px;opacity:.8;display:flex;align-items:center;gap:6px}
+.sub .val{font-size:26px;font-weight:750;margin:2px 0 6px}
+.sub .val small{font-size:14px;opacity:.7;font-weight:500}
+.bar{height:10px;background:rgba(255,255,255,.18);border-radius:20px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:20px;transition:width .5s}
+.msg{margin:14px 0 0;font-size:15.5px;font-weight:600}
+.quote{margin:6px 0 0;font-size:13px;opacity:.75}
+
+/* plan strip */
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.day{flex:0 0 78px;scroll-snap-align:start;border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center;background:#fff;font-size:12px}
+.day .dw{font-weight:700;font-size:12.5px}
+.day .dt{color:var(--mut);font-size:11px}
+.day .tg{margin-top:6px;font-size:12px;line-height:1.5}
+.day .tg b{font-size:15px}
+.day.we{background:#fff8e6;border-color:#f3d48a}
+.day.today{outline:2.5px solid var(--ink);outline-offset:-1px}
+.day.done{background:#e8f7ee;border-color:#9fd8b5}
+.day.eve{background:#f1eefc;border-color:#cbbff3}
+.day.exam{background:#16202e;color:#fff;border-color:#16202e}
+.day.exam .dt{color:#c9d1de}
+.legendrow{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--mut);margin-top:6px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px;border:1px solid var(--line)}
+
+/* subject cards */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px}
+.grid2 .card{margin:0}
+.sh{display:flex;align-items:center;gap:7px;font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.big{font-size:30px;font-weight:750;margin-top:4px}
+.big small{font-size:14px;color:var(--mut);font-weight:500}
+.ms{margin:10px 0 4px;font-size:13px}
+.lbar{height:10px;background:#edf0f4;border-radius:20px;overflow:hidden}
+.lbar i{display:block;height:100%;border-radius:20px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:13px}
+.facts div{background:#f6f7f9;border-radius:8px;padding:6px 8px}
+.facts b{display:block;font-size:16px}
+
+/* badges */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.badge{border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;color:var(--mut);background:#fafbfc}
+.badge .i{font-size:24px;filter:grayscale(1);opacity:.35}
+.badge.on{background:#fffbea;border-color:#f3d48a;color:var(--ink)}
+.badge.on .i{filter:none;opacity:1}
+.badge b{display:block;font-size:12.5px;margin-top:2px}
+
+/* form */
+form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+input,select,button{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+input[type=number]{width:110px}
+button.primary{background:var(--ok);color:#fff;border-color:var(--ok);cursor:pointer;font-weight:650;padding:9px 18px}
+button.del{border:none;background:none;color:var(--mut);cursor:pointer;font-size:15px}
+.hint{font-size:12px;color:var(--mut);margin-top:8px}
+.err{color:#b42318;font-size:13px;margin-top:6px;min-height:1em}
+
+/* chart & table */
+svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--mut);margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--mut);font-weight:600}
+td select{padding:4px 6px}
+.empty{color:var(--mut);padding:20px;text-align:center}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,140%);background:#16202e;color:#fff;padding:12px 18px;border-radius:14px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:transform .35s;max-width:92vw;text-align:center;z-index:20}
+#toast.show{transform:translate(-50%,0)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:19}
+@media (max-width:520px){.count .n{font-size:32px}.sub .val{font-size:22px}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<main>
+
+<section class="hero" id="hero"></section>
+<div class="card" id="note" hidden style="background:#fff8e6;border-color:#f3d48a;font-size:13.5px"></div>
+
+<div class="card">
+<h2>Log an exam</h2>
+<form id="f">
+<label>Date<input type="date" id="date" required></label>
+<label>Subject<select id="subject"><option>English</option><option>Math</option></select></label>
+<label>Score (out of 800)<input type="number" id="score" min="0" max="800" step="10" required></label>
+<label>How hard was it?<select id="diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label>
+<button class="primary" type="submit">Add exam ✓</button>
+</form>
+<div class="err" id="err"></div>
+<div class="hint">Half-test out of 400? Double it (380/400 = 760).</div>
+</div>
+
+<div class="card">
+<h2>The plan to 5 December</h2>
+<div class="strip" id="strip"></div>
+<div class="legendrow">
+<span><i class="sw" style="background:#fff"></i>School day</span>
+<span><i class="sw" style="background:#fff8e6"></i>Push day (Fri–Sun)</span>
+<span><i class="sw" style="background:#e8f7ee"></i>Mission done</span>
+<span><i class="sw" style="background:#f1eefc"></i>Exam eve: review only</span>
+<span>E = English, M = Math</span>
+</div>
+</div>
+
+<div class="grid2" id="subjects"></div>
+
+<div class="card">
+<h2>Score journey</h2>
+<div id="chart"></div>
+<div class="legend">
+<span><i class="dot" style="background:var(--eng)"></i> English</span>
+<span><i class="dot" style="background:var(--mat)"></i> Math</span>
+<span>Filled dot = hard · faded = medium · hollow = easy</span>
+<span>Thick line = average of last 3 exams</span>
+<span>Dashed = path to 800</span>
+</div>
+</div>
+
+<div class="card">
+<h2>Badges</h2>
+<div class="badges" id="badges"></div>
+</div>
+
+<div class="card">
+<h2>All exams</h2>
+<table>
+<thead><tr><th>Date</th><th>Subject</th><th>Score</th><th>Difficulty</th><th></th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+<div class="empty" id="empty" hidden>No exams yet. Add the first one above.</div>
+</div>
+</main>
+<div id="toast"></div>
+
+<script>
+const COL={English:"#2a6fdb",Math:"#e07b00"};
+const SUBJ=["English","Math"];
+const EXAM="2026-12-05", EVE="2026-12-04";
+const LS="malak-exams-v1";
+let rows=[];
+const PROJECT="malak-sat-tracker";
+function groupKey(){
+  const m=(location.hash||"").match(/^#k=([A-Za-z0-9_-]{20,64})$/);
+  if(m){try{localStorage.setItem("malak.k",m[1])}catch(e){}return m[1]}
+  try{const k=localStorage.getItem("malak.k");if(k&&/^[A-Za-z0-9_-]{20,64}$/.test(k)){history.replaceState(null,"",location.pathname+"#k="+k);return k}}catch(e){}
+  return null;
+}
+const KEY=groupKey();
+const BASE=KEY?`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/groups/${KEY}/exams`:null;
+
+const $=id=>document.getElementById(id);
+const mk=(t,a={},txt)=>{const e=document.createElementNS(a.svg?"http://www.w3.org/2000/svg":"http://www.w3.org/1999/xhtml",t);for(const k in a)if(k!=="svg")e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e};
+
+/* ---------- dates ---------- */
+const pd=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d,12)};
+const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const addD=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return fmt(d)};
+const today=()=>fmt(new Date());
+const daysBetween=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DNL=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+// Egypt weekend = Friday + Saturday
+// Push days (5 exams): Friday, Saturday, Sunday
+const kind=s=>s===EVE?"eve":([0,5,6].includes(pd(s).getDay())?"weekend":"weekday");
+const WEIGHT={weekday:1,weekend:2,eve:0}, MIN={weekday:3,weekend:5,eve:0};
+$("date").value=today();
+
+/* ---------- stats ---------- */
+const sortRows=a=>a.slice().sort((x,y)=>(x.date||"").localeCompare(y.date||"")||(x.ts||0)-(y.ts||0));
+function slope(y){const n=y.length;if(n<2)return 0;const mx=(n-1)/2,my=y.reduce((a,b)=>a+b,0)/n;let nu=0,de=0;y.forEach((v,i)=>{nu+=(i-mx)*(v-my);de+=(i-mx)**2});return nu/de}
+function stats(k){
+  const s=sortRows(rows).filter(r=>r.subject===k), sc=s.map(r=>r.score);
+  const ma=sc.map((_,i)=>{const w=sc.slice(Math.max(0,i-2),i+1);return w.reduce((a,b)=>a+b,0)/w.length});
+  if(!sc.length)return {s,sc,ma,n:0,need:0};
+  const avg=ma[ma.length-1];
+  const m=ma.length>=3?slope(ma.slice(-6)):0;
+  const eff=Math.min(15,Math.max(8,m)); // conservative: 8–15 pts gained per exam
+  const need=Math.min(60,Math.ceil(Math.max(0,800-avg)/eff));
+  const hard=s.filter(r=>r.diff==="hard").map(r=>r.score);
+  return {s,sc,ma,n:sc.length,avg,eff,need,best:Math.max(...sc),bestHard:hard.length?Math.max(...hard):null};
+}
+
+/* ---------- plan ---------- */
+function schedule(){
+  const t=today(), st={English:stats("English"),Math:stats("Math")};
+  const nE=st.English.need, nM=st.Math.need;
+  const days=[];for(let d=t;d<EXAM;d=addD(d,1))days.push(d);
+  const doneToday=rows.filter(r=>r.date===t).length;
+  const R=nE+nM+doneToday;
+  const Wsum=days.reduce((a,d)=>a+WEIGHT[kind(d)],0)||1;
+  const share=(nE+nM)?nE/(nE+nM):.5;
+  const plan=days.map(d=>{
+    const k=kind(d);
+    let T=k==="eve"?0:Math.max(MIN[k],Math.round(R*WEIGHT[k]/Wsum));
+    let e=Math.round(T*share),m=T-e;
+    if(T>=2){if(nE>0&&e<1){e=1;m=T-1}if(nM>0&&m<1){m=1;e=T-1}}
+    const dn=rows.filter(r=>r.date===d);
+    const dE=dn.filter(r=>r.subject==="English").length, dM=dn.filter(r=>r.subject==="Math").length;
+    return {d,k,T,e,m,dE,dM,met:T>0&&dE>=e&&dM>=m};
+  });
+  return {st,plan,needTotal:nE+nM,planned:plan.reduce((a,p)=>a+p.T,0)};
+}
+function streak(){
+  const ds=new Set(rows.map(r=>r.date));let d=today();
+  if(!ds.has(d))d=addD(d,-1);let n=0;while(ds.has(d)){n++;d=addD(d,-1)}return n;
+}
+
+/* ---------- messages (rotate daily) ---------- */
+const LINES=[
+ "Every wrong answer you review today is one you get right on 5 Dec.",
+ "Hard exams are the real practice. Easy ones just feel nice.",
+ "You don't need perfect today. You need better than last week.",
+ "Your 5 Dec score is being built right now, not on the morning of the exam.",
+ "Two focused exams beat four rushed ones. Time yourself, then review.",
+ "Future Malak is going to be so glad you did this one.",
+ "The questions you hate are exactly where your next 50 points are hiding.",
+ "Tired is fine. Quitting isn't. One more section.",
+ "You already went from 440 to 670 in English once. You can do it again.",
+ "Champions review mistakes. That's the whole secret."
+];
+const pick=(arr,seed)=>arr[[...seed].reduce((a,c)=>a+c.charCodeAt(0),0)%arr.length];
+
+/* ---------- hero ---------- */
+function drawHero(){
+  const {plan,st}=schedule(), t=today(), h=$("hero");h.replaceChildren();
+  const left=daysBetween(t,EXAM), p=plan[0];
+  const top=mk("div",{class:"top"});
+  const l=mk("div");
+  l.append(mk("h1",{},"Malak's road to 800 🎯"));
+  const dl=pd(t);
+  const tag=left<=0?"Exam day!":p.k==="eve"?"Exam eve · review & rest":p.k==="weekend"?`${DNL[dl.getDay()]} · Push day 🔥`:`${DNL[dl.getDay()]} · School day`;
+  l.append(mk("span",{class:"daytag"},tag));
+  const s=streak();
+  l.append(mk("div",{class:"streak"},s>0?`🔥 ${s}-day streak, don't break it!`:"Start a streak today: log one exam."));
+  const c=mk("div",{class:"count"});
+  c.append(mk("div",{class:"n"},Math.max(0,left)),mk("div",{class:"l"},left===1?"day to the SAT":"days to the SAT"));
+  top.append(l,c);h.append(top);
+
+  if(left<=0){h.append(mk("p",{class:"msg"},"Today's the day. Breathe, read every question carefully, trust the training. You've got this, Malak! 💙"));return}
+
+  if(p.k==="eve"){
+    h.append(mk("p",{class:"msg"},"No new exams today. Go through your mistake notes, pack your bag, sleep early. The work is done. 🌙"));
+    h.append(mk("p",{class:"quote"},"Tomorrow you just show what you've built."));
+    return;
+  }
+  const subs=mk("div",{class:"subs"});
+  for(const [k,done,tgt] of [["English",p.dE,p.e],["Math",p.dM,p.m]]){
+    const b=mk("div",{class:"sub"});
+    const nm=mk("div",{class:"name"});nm.append(mk("i",{class:"dot",style:"background:"+COL[k]}),k+" today");
+    const v=mk("div",{class:"val"},`${done}`);v.append(mk("small",{},` / ${tgt}${done>=tgt&&tgt>0?" ✓":""}`));
+    const bar=mk("div",{class:"bar"});bar.append(mk("i",{style:`width:${tgt?Math.min(100,100*done/tgt):100}%;background:${done>=tgt?"#4ade80":COL[k]}`}));
+    b.append(nm,v,bar);subs.append(b);
+  }
+  h.append(subs);
+  const done=p.dE+p.dM, togo=Math.max(0,p.e-p.dE)+Math.max(0,p.m-p.dM);
+  let msg;
+  if(p.met&&done>p.T)msg=`Mission smashed: ${done} exams today! You're ahead of the plan. 🚀`;
+  else if(p.met)msg="Mission complete! 🎉 Anything extra today is pure bonus.";
+  else if(done===0)msg=p.k==="weekend"
+     ?`Push day = your secret weapon. ${p.e} English + ${p.m} Math today puts you way ahead.`
+     :`School day, but ${p.T} exams fits: one after homework, one before bed.`;
+  else msg=`${togo} to go. You've started, now finish strong! 💪`;
+  h.append(mk("p",{class:"msg"},msg));
+  h.append(mk("p",{class:"quote"},"💡 "+pick(LINES,t)));
+}
+
+/* ---------- plan strip ---------- */
+function drawStrip(){
+  const {plan}=schedule(), el=$("strip"), t=today();el.replaceChildren();
+  for(const p of plan){
+    const d=pd(p.d);
+    const cls=["day",p.k==="weekend"?"we":"",p.k==="eve"?"eve":"",p.met?"done":"",p.d===t?"today":""].join(" ");
+    const c=mk("div",{class:cls});
+    c.append(mk("div",{class:"dw"},p.d===t?"Today":DN[d.getDay()]),mk("div",{class:"dt"},`${d.getDate()} ${MN[d.getMonth()]}`));
+    const tg=mk("div",{class:"tg"});
+    if(p.k==="eve"){tg.append(mk("b",{},"📖"),mk("br"),document.createTextNode("Review"))}
+    else{
+      tg.append(mk("b",{},p.met?"✓":String(p.T)),mk("br"),document.createTextNode(`E${p.e} · M${p.m}`));
+      if(p.d<=t&&(p.dE||p.dM)&&!p.met){tg.append(mk("br"),document.createTextNode(`${p.dE+p.dM} done`))}
+    }
+    c.append(tg);el.append(c);
+  }
+  const ex=mk("div",{class:"day exam"});const d=pd(EXAM);
+  ex.append(mk("div",{class:"dw"},DN[d.getDay()]),mk("div",{class:"dt"},`${d.getDate()} ${MN[d.getMonth()]}`));
+  const tg=mk("div",{class:"tg"});tg.append(mk("b",{},"🎯"),mk("br"),document.createTextNode("SAT"));ex.append(tg);el.append(ex);
+}
+
+/* ---------- subject cards ---------- */
+function drawSubjects(){
+  const {st,plan}=schedule(), box=$("subjects");box.replaceChildren();
+  for(const k of SUBJ){
+    const s=st[k], c=mk("div",{class:"card"});
+    const h=mk("div",{class:"sh"});h.append(mk("i",{class:"dot",style:"background:"+COL[k]}),k);c.append(h);
+    if(!s.n){c.append(mk("p",{class:"mut"},"No exams yet. Log the first one!"));box.append(c);continue}
+    const big=mk("div",{class:"big"},String(Math.round(s.avg)));big.append(mk("small",{}," / 800 · last-3 average"));c.append(big);
+    const next=Math.min(800,Math.floor(s.avg/50)*50+50), prev=next-50;
+    const pct=s.avg>=800?100:Math.max(0,Math.min(100,100*(s.avg-prev)/50));
+    c.append(mk("div",{class:"ms"},s.avg>=800?"🏆 800 club!":`Next level: ${next}. Only ${Math.ceil(next-s.avg)} points away`));
+    const lb=mk("div",{class:"lbar"});lb.append(mk("i",{style:`width:${pct}%;background:${COL[k]}`}));c.append(lb);
+    const planned=plan.reduce((a,p)=>a+(k==="English"?p.e:p.m),0);
+    const f=mk("div",{class:"facts"});
+    const fact=(lbl,val)=>{const d=mk("div");d.append(mk("b",{},val),document.createTextNode(lbl));f.append(d)};
+    fact("Personal best",String(s.best));
+    fact("Best hard exam",s.bestHard!=null?String(s.bestHard):"–");
+    fact("Exams done",String(s.n));
+    fact("Planned before 5 Dec",String(planned));
+    c.append(f);
+    c.append(mk("p",{class:"mut",style:"font-size:12.5px;margin:10px 0 0"},`Path to 800: about ${s.need} more exams at +${Math.round(s.eff)} per exam, if every mistake gets reviewed.`));
+    box.append(c);
+  }
+}
+
+/* ---------- chart ---------- */
+function drawChart(){
+  const {st}=schedule();
+  const W=760,H=380,L=46,R=16,T=48,B=38;
+  const all=rows.map(r=>r.score);
+  const lo=Math.max(0,Math.floor((Math.min(450,...all)-20)/50)*50),hi=800;
+  const N=Math.max(2,...SUBJ.map(k=>st[k].n+st[k].need));
+  const X=i=>L+(i/(N-1))*(W-L-R),Y=v=>T+(1-(v-lo)/(hi-lo))*(H-T-B);
+  const svg=mk("svg",{svg:1,viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Score journey and path to 800"});
+  for(let v=lo;v<=hi;v+=50){
+    svg.append(mk("line",{svg:1,x1:L,x2:W-R,y1:Y(v),y2:Y(v),stroke:v===hi?"#1f9d55":"#e4e7ec","stroke-width":v===hi?2:1}));
+    svg.append(mk("text",{svg:1,x:L-8,y:Y(v)+4,"text-anchor":"end","font-size":11,fill:"#667085"},v));
+  }
+  svg.append(mk("text",{svg:1,x:L+4,y:Y(hi)-5,"font-size":11.5,"font-weight":700,fill:"#1f9d55"},"🏆 800"));
+  const step=N>40?10:N>20?5:N>12?2:1;
+  for(let i=0;i<N;i+=step)svg.append(mk("text",{svg:1,x:X(i),y:H-18,"text-anchor":"middle","font-size":11,fill:"#667085"},i+1));
+  svg.append(mk("text",{svg:1,x:(L+W-R)/2,y:H-2,"text-anchor":"middle","font-size":11,fill:"#667085"},"Exam number"));
+  SUBJ.forEach((k,ki)=>{
+    const s=st[k];if(!s.n)return;const c=COL[k];
+    if(s.n>1){
+      svg.append(mk("polyline",{svg:1,points:s.sc.map((v,i)=>X(i)+","+Y(v)).join(" "),fill:"none",stroke:c,"stroke-width":1.5,"stroke-opacity":.4}));
+      svg.append(mk("polyline",{svg:1,points:s.ma.map((v,i)=>X(i)+","+Y(v)).join(" "),fill:"none",stroke:c,"stroke-width":3.5,"stroke-linecap":"round","stroke-linejoin":"round"}));
+    }
+    if(s.need>0){
+      const n=s.n-1,x2=n+s.need;
+      svg.append(mk("line",{svg:1,x1:X(n),y1:Y(s.avg),x2:X(x2),y2:Y(800),stroke:c,"stroke-width":2.5,"stroke-dasharray":"7 6"}));
+      svg.append(mk("circle",{svg:1,cx:X(x2),cy:Y(800),r:7,fill:"#fff",stroke:c,"stroke-width":3}));
+      svg.append(mk("text",{svg:1,x:X(x2),y:Y(800)-(ki?28:12),"text-anchor":x2>N*0.75?"end":"middle","font-size":11.5,"font-weight":700,fill:c},`${k}: 800 by exam #${x2+1}`));
+    }
+    s.s.forEach((r,i)=>{
+      const d=r.diff;
+      const dot=mk("circle",{svg:1,cx:X(i),cy:Y(r.score),r:6,stroke:c,"stroke-width":2,fill:d==="easy"?"#fff":c,"fill-opacity":d==="medium"?.45:1});
+      dot.append(mk("title",{svg:1},`${k} · ${r.date} · ${r.score}/800 · ${d}`));
+      svg.append(dot);
+    });
+  });
+  $("chart").replaceChildren(svg);
+}
+
+/* ---------- badges ---------- */
+function drawBadges(){
+  const {st,plan}=schedule(), n=rows.length, s=streak(), el=$("badges");el.replaceChildren();
+  const hardHero=rows.some(r=>r.diff==="hard"&&r.score>=600);
+  const avgs=SUBJ.map(k=>st[k].n?st[k].avg:0);
+  const B=[
+    ["🚀","First step","Log 1 exam",n>=1],
+    ["✋","High five","5 exams",n>=5],
+    ["🔟","Double digits","10 exams",n>=10],
+    ["💪","Grinder","25 exams",n>=25],
+    ["🦾","Machine","40 exams",n>=40],
+    ["🔥","On fire","3-day streak",s>=3],
+    ["⚡","Unstoppable","7-day streak",s>=7],
+    ["✅","Mission done","Hit a daily mission",plan.some(p=>p.met)],
+    ["🧗","Hard-mode hero","600+ on a hard exam",hardHero],
+    ["📘","English 600","English avg 600+",avgs[0]>=600],
+    ["📐","Math 700","Math avg 700+",avgs[1]>=700],
+    ["🏆","700 club","Both averages 700+",avgs[0]>=700&&avgs[1]>=700],
+  ];
+  for(const [i,t,d,on] of B){
+    const b=mk("div",{class:"badge"+(on?" on":"")});
+    b.append(mk("div",{class:"i"},i),mk("b",{},t),document.createTextNode(d));el.append(b);
+  }
+}
+
+/* ---------- table ---------- */
+function drawTable(){
+  const tb=$("rows");tb.replaceChildren();
+  const list=sortRows(rows).reverse();$("empty").hidden=list.length>0;
+  for(const r of list){
+    const tr=mk("tr");
+    tr.append(mk("td",{},r.date),mk("td",{},r.subject),mk("td",{},r.score+" / 800"));
+    const td=mk("td"),sel=mk("select");
+    for(const v of["easy","medium","hard"]){const o=mk("option",{value:v},v[0].toUpperCase()+v.slice(1));if(v===r.diff)o.selected=true;sel.append(o)}
+    sel.onchange=()=>update(r.id,{diff:sel.value});td.append(sel);
+    const td2=mk("td"),b=mk("button",{class:"del",title:"Delete","aria-label":"Delete"},"✕");
+    b.onclick=()=>{if(b.dataset.s)remove(r.id);else{b.dataset.s=1;b.textContent="Sure?";setTimeout(()=>{b.dataset.s="";b.textContent="✕"},2500)}};
+    td2.append(b);tr.append(td,td2);tb.append(tr);
+  }
+}
+
+function render(){drawHero();drawStrip();drawSubjects();drawChart();drawBadges();drawTable()}
+
+/* ---------- celebration ---------- */
+let tt;
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),4200)}
+function confetti(){
+  const cv=$("fx"),ctx=cv.getContext("2d");cv.width=innerWidth;cv.height=innerHeight;
+  const cols=["#2a6fdb","#e07b00","#1f9d55","#f5b301","#c2185b","#7c4dff"];
+  const P=Array.from({length:140},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.4,vx:(Math.random()-.5)*3,vy:2+Math.random()*4,r:4+Math.random()*5,c:cols[Math.floor(Math.random()*cols.length)],a:Math.random()*6}));
+  const t0=performance.now();
+  (function f(t){ctx.clearRect(0,0,cv.width,cv.height);
+    for(const p of P){p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.a+=.1;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.fillStyle=p.c;ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);ctx.restore()}
+    if(t-t0<2200)requestAnimationFrame(f);else ctx.clearRect(0,0,cv.width,cv.height)})(t0);
+}
+function celebrate(o){
+  const prev=rows.filter(r=>r.subject===o.subject);
+  const pb=prev.length&&o.score>Math.max(...prev.map(r=>r.score));
+  const hardPb=o.diff==="hard"&&prev.filter(r=>r.diff==="hard").every(r=>o.score>r.score)&&prev.some(r=>r.diff==="hard");
+  const {plan}=schedule(), p=plan.find(x=>x.d===o.date);
+  let missionNow=false;
+  if(p&&!p.met&&p.T>0){const dE=p.dE+(o.subject==="English"?1:0),dM=p.dM+(o.subject==="Math"?1:0);missionNow=dE>=p.e&&dM>=p.m}
+  if(missionNow){confetti();toast("🎉 Today's mission complete! Proud of you, Malak!")}
+  else if(hardPb){confetti();toast(`🧗 Best HARD ${o.subject} exam ever: ${o.score}!`)}
+  else if(pb){confetti();toast(`🏆 New ${o.subject} personal best: ${o.score}!`)}
+  else if(p&&p.T>0){const left=Math.max(0,p.e-p.dE-(o.subject==="English"?1:0))+Math.max(0,p.m-p.dM-(o.subject==="Math"?1:0));
+    toast(left>0?`✓ Logged! ${left} more to finish today's mission.`:"✓ Logged! Bonus exam, love it. 🚀")}
+  else toast("✓ Logged! Keep going.");
+}
+
+/* ---------- storage: Firestore REST ---------- */
+const CACHE="malak.rows";
+const fromDoc=d=>{const f=d.fields||{};return {id:d.name.split("/").pop(),date:f.date&&f.date.stringValue,subject:f.subject&&f.subject.stringValue,score:Number(f.score&&(f.score.integerValue??f.score.doubleValue)),diff:(f.diff&&f.diff.stringValue)||"medium",ts:Number((f.ts&&f.ts.integerValue)||0)}};
+const toFields=o=>({date:{stringValue:o.date},subject:{stringValue:o.subject},score:{integerValue:String(o.score)},diff:{stringValue:o.diff},ts:{integerValue:String(o.ts||0)}});
+function status(t,bad){const n=$("note");n.hidden=!t;n.textContent=t||"";n.style.background=bad?"#fdecec":"#fff8e6"}
+async function req(url,init){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),15000);
+  try{const r=await fetch(url,Object.assign({signal:ctl.signal},init||{}));if(!r.ok)throw new Error("HTTP "+r.status);return r}
+  finally{clearTimeout(t)}
+}
+let loading=false,fails=0;
+async function load(){
+  if(!BASE||loading)return;loading=true;
+  try{
+    const out=[];let tok="";
+    do{const j=await (await req(BASE+"?pageSize=300"+(tok?"&pageToken="+encodeURIComponent(tok):""))).json();
+      (j.documents||[]).forEach(d=>{const r=fromDoc(d);if(r.subject&&!isNaN(r.score))out.push(r)});tok=j.nextPageToken||""}while(tok);
+    rows=out;fails=0;status("");
+    try{localStorage.setItem(CACHE,JSON.stringify(rows))}catch(e){}
+    render();
+  }catch(e){if(++fails>=2)status("Can't reach the database right now. Check the internet; it will retry by itself.",true)}
+  finally{loading=false}
+}
+async function add(o){
+  o.ts=Date.now();celebrate(o);
+  const id="e"+o.ts+Math.floor(Math.random()*1e3);
+  rows.push(Object.assign({id},o));render();
+  try{await req(BASE+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:toFields(o)})})}
+  catch(e){$("err").textContent="Couldn't save that one. Check the internet and add it again."}
+  load();
+}
+async function update(id,p){
+  const r=rows.find(x=>x.id===id);if(!r)return;Object.assign(r,p);render();
+  try{await req(BASE+"/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:toFields(r)})})}
+  catch(e){$("err").textContent="Couldn't save the change."}
+  load();
+}
+async function remove(id){
+  rows=rows.filter(x=>x.id!==id);render();
+  try{await req(BASE+"/"+id,{method:"DELETE"})}catch(e){$("err").textContent="Couldn't delete."}
+  load();
+}
+
+$("f").addEventListener("submit",e=>{
+  e.preventDefault();$("err").textContent="";
+  const score=Number($("score").value);
+  if(!(score>=0&&score<=800)){$("err").textContent="Score must be between 0 and 800.";return}
+  add({date:$("date").value,subject:$("subject").value,score,diff:$("diff").value});
+  $("score").value="";
+});
+
+(function init(){
+  if(!BASE){
+    render();
+    status("This page needs the private link with #k=… at the end. Ask Mahmoud for it.",true);
+    $("f").querySelector("button").disabled=true;return;
+  }
+  try{rows=JSON.parse(localStorage.getItem(CACHE)||"[]")}catch(e){rows=[]}
+  render();load();
+  setInterval(()=>{if(!document.hidden)load()},20000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
+})();
+</script>
+</body>
+</html>
