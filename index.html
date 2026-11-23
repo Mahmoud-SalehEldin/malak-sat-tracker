@@ -44,6 +44,8 @@ h2{font-size:16px;margin:0 0 10px}
 .day.we{background:#fff8e6;border-color:#f3d48a}
 .day.today{outline:2.5px solid var(--ink);outline-offset:-1px}
 .day.done{background:#e8f7ee;border-color:#9fd8b5}
+.day.miss{background:#f6f7f9;color:#667085}
+.day .goal{font-size:10.5px;color:var(--mut)}
 .day.eve{background:#f1eefc;border-color:#cbbff3}
 .day.exam{background:#16202e;color:#fff;border-color:#16202e}
 .day.exam .dt{color:#c9d1de}
@@ -127,6 +129,8 @@ td select{padding:4px 6px}
 <span><i class="sw" style="background:#fff"></i>School day</span>
 <span><i class="sw" style="background:#fff8e6"></i>Push day (Fri–Sun)</span>
 <span><i class="sw" style="background:#e8f7ee"></i>Mission done</span>
+<span><i class="sw" style="background:#f6f7f9"></i>Past day, short of goal</span>
+<span>Past days: done / goal</span>
 <span><i class="sw" style="background:#f1eefc"></i>Exam eve: review only</span>
 <span>E = English, M = Math</span>
 </div>
@@ -233,6 +237,16 @@ function schedule(){
   }
   return {st,plan,needTotal:nE+nM,planned:plan.reduce((a,p)=>a+p.T,0)};
 }
+const START="2026-11-22";
+function pastDays(){
+  const out=[],t=today();
+  for(let d=START;d<t&&d<EXAM;d=addD(d,1)){
+    const k=kind(d),T=MIN[k],dn=rows.filter(r=>r.date===d);
+    const dE=dn.filter(r=>r.subject==="English").length,dM=dn.filter(r=>r.subject==="Math").length;
+    out.push({d,k,T,dE,dM,done:dE+dM,met:T>0&&dE+dM>=T,past:true});
+  }
+  return out;
+}
 function streak(){
   const ds=new Set(rows.map(r=>r.date));let d=today();
   if(!ds.has(d))d=addD(d,-1);let n=0;while(ds.has(d)){n++;d=addD(d,-1)}return n;
@@ -301,22 +315,27 @@ function drawHero(){
 /* ---------- plan strip ---------- */
 function drawStrip(){
   const {plan}=schedule(), el=$("strip"), t=today();el.replaceChildren();
-  for(const p of plan){
-    const d=pd(p.d);
-    const cls=["day",p.k==="weekend"?"we":"",p.k==="eve"?"eve":"",p.met?"done":"",p.d===t?"today":""].join(" ");
+  let todayEl=null;
+  const cell=(p)=>{
+    const d=pd(p.d), done=p.dE+p.dM;
+    const cls=["day",p.k==="weekend"?"we":"",p.k==="eve"?"eve":"",p.met?"done":"",p.past&&!p.met&&p.T>0?"miss":"",p.d===t?"today":""].join(" ");
     const c=mk("div",{class:cls});
     c.append(mk("div",{class:"dw"},p.d===t?"Today":DN[d.getDay()]),mk("div",{class:"dt"},`${d.getDate()} ${MN[d.getMonth()]}`));
     const tg=mk("div",{class:"tg"});
-    if(p.k==="eve"){tg.append(mk("b",{},"📖"),mk("br"),document.createTextNode("Review"))}
-    else{
-      tg.append(mk("b",{},p.met?"✓":String(p.T)),mk("br"),document.createTextNode(`E${p.e} · M${p.m}`));
-      if(p.d<=t&&(p.dE||p.dM)&&!p.met){tg.append(mk("br"),document.createTextNode(`${p.dE+p.dM} done`))}
-    }
+    if(p.k==="eve"&&!done){tg.append(mk("b",{},"📖"),mk("br"),document.createTextNode("Review"))}
+    else if(p.past||p.d===t){
+      tg.append(mk("b",{},(p.met?"✓ ":"")+`${done}/${p.T}`),mk("br"),document.createTextNode(`E${p.dE} · M${p.dM}`));
+      if(p.d===t&&!p.met)tg.append(mk("br"),mk("span",{class:"goal"},`goal E${p.e} · M${p.m}`));
+    }else tg.append(mk("b",{},String(p.T)),mk("br"),document.createTextNode(`E${p.e} · M${p.m}`));
     c.append(tg);el.append(c);
-  }
+    if(p.d===t)todayEl=c;
+  };
+  pastDays().forEach(cell);
+  plan.forEach(cell);
   const ex=mk("div",{class:"day exam"});const d=pd(EXAM);
   ex.append(mk("div",{class:"dw"},DN[d.getDay()]),mk("div",{class:"dt"},`${d.getDate()} ${MN[d.getMonth()]}`));
   const tg=mk("div",{class:"tg"});tg.append(mk("b",{},"🎯"),mk("br"),document.createTextNode("SAT"));ex.append(tg);el.append(ex);
+  if(todayEl&&!el.dataset.scrolled){el.dataset.scrolled=1;requestAnimationFrame(()=>{el.scrollLeft=Math.max(0,todayEl.offsetLeft-el.offsetLeft-90)})}
 }
 
 /* ---------- subject cards ---------- */
@@ -404,7 +423,7 @@ function drawBadges(){
     ["🦾","Machine","40 exams",n>=40],
     ["🔥","On fire","3-day streak",s>=3],
     ["⚡","Unstoppable","7-day streak",s>=7],
-    ["✅","Mission done","Hit a daily mission",plan.some(p=>p.met)],
+    ["✅","Mission done","Hit a daily mission",plan.some(p=>p.met)||pastDays().some(p=>p.met)],
     ["🧗","Hard-mode hero","600+ on a hard exam",hardHero],
     ["📘","English 600","English avg 600+",avgs[0]>=600],
     ["📐","Math 700","Math avg 700+",avgs[1]>=700],
