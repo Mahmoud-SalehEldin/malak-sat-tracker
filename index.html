@@ -210,8 +210,8 @@ function stats(k){
 }
 
 /* ---------- plan ---------- */
-function schedule(){
-  const t=today(), st={English:stats("English"),Math:stats("Math")};
+function schedule(asOf){
+  const t=asOf||today(), st={English:stats("English"),Math:stats("Math")};
   const nE=st.English.need, nM=st.Math.need;
   const days=[];for(let d=t;d<EXAM;d=addD(d,1))days.push(d);
   const doneToday=rows.filter(r=>r.date===t).length;
@@ -241,9 +241,12 @@ const START="2026-11-22";
 function pastDays(){
   const out=[],t=today();
   for(let d=START;d<t&&d<EXAM;d=addD(d,1)){
-    const k=kind(d),T=MIN[k],dn=rows.filter(r=>r.date===d);
+    // rebuild that day's real mission from the scores logged before it
+    const all=rows;rows=all.filter(r=>r.date<d);
+    let g;try{g=schedule(d).plan[0]}finally{rows=all}
+    const k=kind(d),T=g?g.T:MIN[k],e=g?g.e:0,m=g?g.m:0,dn=rows.filter(r=>r.date===d);
     const dE=dn.filter(r=>r.subject==="English").length,dM=dn.filter(r=>r.subject==="Math").length;
-    out.push({d,k,T,dE,dM,done:dE+dM,met:T>0&&dE+dM>=T,past:true});
+    out.push({d,k,T,e,m,dE,dM,done:dE+dM,met:T>0&&dE>=e&&dM>=m,past:true});
   }
   return out;
 }
@@ -325,7 +328,7 @@ function drawStrip(){
     if(p.k==="eve"&&!done){tg.append(mk("b",{},"📖"),mk("br"),document.createTextNode("Review"))}
     else if(p.past||p.d===t){
       tg.append(mk("b",{},(p.met?"✓ ":"")+`${done}/${p.T}`),mk("br"),document.createTextNode(`E${p.dE} · M${p.dM}`));
-      if(p.d===t&&!p.met)tg.append(mk("br"),mk("span",{class:"goal"},`goal E${p.e} · M${p.m}`));
+      if(!p.met)tg.append(mk("br"),mk("span",{class:"goal"},`goal E${p.e} · M${p.m}`));
     }else tg.append(mk("b",{},String(p.T)),mk("br"),document.createTextNode(`E${p.e} · M${p.m}`));
     c.append(tg);el.append(c);
     if(p.d===t)todayEl=c;
